@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../localization/app_locale.dart';
 
 enum DualTextDisplayMode {
   stacked,
   inline,
-  englishOnly,
-  hindiOnly,
 }
 
-class DualText extends StatelessWidget {
+class DualText extends ConsumerWidget {
   final String en;
   final String? hi;
   final TextStyle? style;
@@ -18,6 +18,7 @@ class DualText extends StatelessWidget {
   final MainAxisAlignment mainAxisAlignment;
   final int? maxLines;
   final TextOverflow? overflow;
+  final bool forceDual;
 
   const DualText({
     super.key,
@@ -31,6 +32,7 @@ class DualText extends StatelessWidget {
     this.mainAxisAlignment = MainAxisAlignment.start,
     this.maxLines,
     this.overflow,
+    this.forceDual = false,
   });
 
   const DualText.inline({
@@ -44,10 +46,35 @@ class DualText extends StatelessWidget {
     this.mainAxisAlignment = MainAxisAlignment.start,
     this.maxLines,
     this.overflow,
+    this.forceDual = false,
   }) : mode = DualTextDisplayMode.inline;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(appLocaleProvider);
+
+    // If Hindi or English only is requested and not forced dual:
+    if (!forceDual && lang == AppLanguage.english) {
+      return Text(
+        en,
+        style: style,
+        textAlign: textAlign,
+        maxLines: maxLines,
+        overflow: overflow,
+      );
+    }
+
+    if (!forceDual && lang == AppLanguage.hindi) {
+      return Text(
+        (hi != null && hi!.trim().isNotEmpty) ? hi! : en,
+        style: style,
+        textAlign: textAlign,
+        maxLines: maxLines,
+        overflow: overflow,
+      );
+    }
+
+    // Dual display mode (or when forceDual is true)
     if (hi == null || hi!.trim().isEmpty) {
       return Text(
         en,
@@ -84,7 +111,7 @@ class DualText extends StatelessWidget {
     final primaryStyle = style ?? defaultStyle;
     final secondaryStyle = subStyle ??
         primaryStyle.copyWith(
-          fontSize: (primaryStyle.fontSize ?? 14.0) * 0.82,
+          fontSize: (primaryStyle.fontSize ?? 14.0) * 0.84,
           fontWeight: FontWeight.w400,
           color: (primaryStyle.color ?? defaultStyle.color)?.withValues(alpha: 0.75),
         );

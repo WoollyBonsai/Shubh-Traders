@@ -14,6 +14,7 @@ class AppSettings {
   final String shopName;
   final String shopAddress;
   final String shopPhone;
+  final String? paymentQrPath;
 
   const AppSettings({
     this.fontSizeMultiplier = 1.0,
@@ -22,6 +23,7 @@ class AppSettings {
     this.shopName = 'Shubh Traders (शुभ ट्रेडर्स)',
     this.shopAddress = 'Station Road, Building Material Market, India',
     this.shopPhone = '+91 98765 43210',
+    this.paymentQrPath,
   });
 
   AppSettings copyWith({
@@ -31,6 +33,8 @@ class AppSettings {
     String? shopName,
     String? shopAddress,
     String? shopPhone,
+    String? paymentQrPath,
+    bool clearQr = false,
   }) {
     return AppSettings(
       fontSizeMultiplier: fontSizeMultiplier ?? this.fontSizeMultiplier,
@@ -39,6 +43,7 @@ class AppSettings {
       shopName: shopName ?? this.shopName,
       shopAddress: shopAddress ?? this.shopAddress,
       shopPhone: shopPhone ?? this.shopPhone,
+      paymentQrPath: clearQr ? null : (paymentQrPath ?? this.paymentQrPath),
     );
   }
 }
@@ -53,6 +58,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
     final shopName = prefs.getString('shop_name') ?? 'Shubh Traders (शुभ ट्रेडर्स)';
     final shopAddress = prefs.getString('shop_address') ?? 'Station Road, Building Material Market, India';
     final shopPhone = prefs.getString('shop_phone') ?? '+91 98765 43210';
+    final qrPath = prefs.getString('payment_qr_path');
 
     return AppSettings(
       fontSizeMultiplier: fontMultiplier,
@@ -61,6 +67,7 @@ class SettingsNotifier extends Notifier<AppSettings> {
       shopName: shopName,
       shopAddress: shopAddress,
       shopPhone: shopPhone,
+      paymentQrPath: qrPath,
     );
   }
 
@@ -80,6 +87,18 @@ class SettingsNotifier extends Notifier<AppSettings> {
     state = state.copyWith(dualTextMode: mode);
     final prefs = ref.read(sharedPreferencesProvider);
     await prefs.setString('dual_text_mode', mode == DualTextDisplayMode.inline ? 'inline' : 'stacked');
+  }
+
+  Future<void> setPaymentQrPath(String? path) async {
+    if (path == null) {
+      state = state.copyWith(clearQr: true);
+      final prefs = ref.read(sharedPreferencesProvider);
+      await prefs.remove('payment_qr_path');
+    } else {
+      state = state.copyWith(paymentQrPath: path);
+      final prefs = ref.read(sharedPreferencesProvider);
+      await prefs.setString('payment_qr_path', path);
+    }
   }
 
   Future<void> updateShopDetails({

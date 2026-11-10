@@ -47,13 +47,23 @@ class InventoryNotifier {
   InventoryNotifier(this._db);
 
   // Categories
-  Future<int> addCategory(String nameEn, String nameHi) {
-    return _db.into(_db.categories).insert(
+  Future<int> addCategory(String nameEn, String nameHi, {required int userId, required String username}) async {
+    final catId = await _db.into(_db.categories).insert(
       CategoriesCompanion.insert(
         nameEn: nameEn.trim(),
         nameHi: nameHi.trim(),
       ),
     );
+
+    await _db.logAudit(
+      userId: userId,
+      username: username,
+      actionType: 'CATEGORY_CREATED',
+      entityId: 'CAT-$catId',
+      details: 'User "$username" created new product category: "$nameEn / $nameHi".',
+    );
+
+    return catId;
   }
 
   Future<bool> updateCategory(int id, String nameEn, String nameHi) {
@@ -79,8 +89,12 @@ class InventoryNotifier {
     required double stockQty,
     required String unit,
     double lowStockThreshold = 10.0,
-  }) {
-    return _db.into(_db.items).insert(
+    String? brand,
+    String? imagePath,
+    required int userId,
+    required String username,
+  }) async {
+    final itemId = await _db.into(_db.items).insert(
       ItemsCompanion.insert(
         categoryId: categoryId,
         nameEn: nameEn.trim(),
@@ -90,8 +104,20 @@ class InventoryNotifier {
         stockQty: Value(stockQty),
         unit: Value(unit.trim()),
         lowStockThreshold: Value(lowStockThreshold),
+        brand: Value(brand?.trim()),
+        imagePath: Value(imagePath?.trim()),
       ),
     );
+
+    await _db.logAudit(
+      userId: userId,
+      username: username,
+      actionType: 'ITEM_CREATED',
+      entityId: 'ITEM-$itemId',
+      details: 'User "$username" created item "$nameEn" (${brand ?? "No Brand"}, $stockQty $unit @ ₹$sellingPrice).',
+    );
+
+    return itemId;
   }
 
   Future<bool> updateItem({
@@ -103,8 +129,12 @@ class InventoryNotifier {
     required double sellingPrice,
     required String unit,
     required double lowStockThreshold,
-  }) {
-    return (_db.update(_db.items)..where((i) => i.id.equals(id))).write(
+    String? brand,
+    String? imagePath,
+    required int userId,
+    required String username,
+  }) async {
+    final updated = await (_db.update(_db.items)..where((i) => i.id.equals(id))).write(
       ItemsCompanion(
         categoryId: Value(categoryId),
         nameEn: Value(nameEn.trim()),
@@ -113,8 +143,22 @@ class InventoryNotifier {
         sellingPrice: Value(sellingPrice),
         unit: Value(unit.trim()),
         lowStockThreshold: Value(lowStockThreshold),
+        brand: Value(brand?.trim()),
+        imagePath: Value(imagePath?.trim()),
       ),
     ).then((count) => count > 0);
+
+    if (updated) {
+      await _db.logAudit(
+        userId: userId,
+        username: username,
+        actionType: 'ITEM_UPDATED',
+        entityId: 'ITEM-$id',
+        details: 'User "$username" updated details for product "$nameEn" (Brand: ${brand ?? "General"}).',
+      );
+    }
+
+    return updated;
   }
 
   Future<void> restock({
@@ -122,17 +166,31 @@ class InventoryNotifier {
     required double addedQty,
     double? newPurchasePrice,
     double? newSellingPrice,
+    required int userId,
+    required String username,
   }) {
     return _db.restockItem(
       itemId: itemId,
       addedQty: addedQty,
       newPurchasePrice: newPurchasePrice,
       newSellingPrice: newSellingPrice,
+      userId: userId,
+      username: username,
     );
   }
 
-  Future<int> deleteItem(int id) {
-    return (_db.delete(_db.items)..where((i) => i.id.equals(id))).go();
+  Future<int> deleteItem(int id, {required int userId, required String username, required String itemName}) async {
+    final count = await (_db.delete(_db.items)..where((i) => i.id.equals(id))).go();
+    if (count > 0) {
+      await _db.logAudit(
+        userId: userId,
+        username: username,
+        actionType: 'ITEM_DELETED',
+        entityId: 'ITEM-$id',
+        details: 'User "$username" DELETED product "$itemName" (ID: #$id) from inventory.',
+      );
+    }
+    return count;
   }
 }
 

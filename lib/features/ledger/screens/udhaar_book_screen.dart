@@ -6,6 +6,7 @@ import 'package:shubh_traders/core/database/database_provider.dart';
 import 'package:shubh_traders/core/theme/app_theme.dart';
 import 'package:shubh_traders/core/utils/currency_format.dart';
 import 'package:shubh_traders/core/widgets/dual_text.dart';
+import 'package:shubh_traders/features/auth/providers/auth_provider.dart';
 import 'package:shubh_traders/features/pos/providers/pos_provider.dart';
 import 'package:shubh_traders/features/ledger/providers/ledger_provider.dart';
 
@@ -105,11 +106,15 @@ class _UdhaarBookScreenState extends ConsumerState<UdhaarBookScreen> {
               onPressed: () async {
                 if (!formKey.currentState!.validate()) return;
                 final amount = double.parse(amountCtrl.text);
+                final auth = ref.read(authProvider);
+                final user = auth.currentUser;
 
                 await ref.read(ledgerNotifierProvider).receivePayment(
                       customerId: customer.id,
                       amountPaid: amount,
                       paymentMethod: paymentMethod,
+                      userId: user?.id ?? 1,
+                      username: user?.username ?? 'Staff',
                       notes: notesCtrl.text.trim().isEmpty ? null : notesCtrl.text.trim(),
                     );
 

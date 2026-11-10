@@ -171,7 +171,7 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Close')),
-          ElevatedButton.icon(
+          OutlinedButton.icon(
             onPressed: () async {
               final settings = ref.read(settingsProvider);
               await ReceiptPdfGenerator.printReceipt(
@@ -183,9 +183,23 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
                 isThermal: false,
               );
             },
+            icon: const Icon(Icons.picture_as_pdf, size: 16),
+            label: const Text('Windows Print / PDF'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () async {
+              final settings = ref.read(settingsProvider);
+              await ReceiptPdfGenerator.printWithGoogleChrome(
+                sale: saleWithDetails.sale,
+                items: itemsWithDetails,
+                customer: saleWithDetails.customer,
+                user: saleWithDetails.user,
+                settings: settings,
+              );
+            },
             icon: const Icon(Icons.print, size: 18),
-            label: const Text('Reprint Receipt (प्रिंट)'),
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor, foregroundColor: Colors.white),
+            label: const Text('Print via Chrome (अनुशंसित)'),
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.successGreen, foregroundColor: Colors.white),
           ),
         ],
       ),

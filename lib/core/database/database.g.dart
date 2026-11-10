@@ -1047,6 +1047,26 @@ class $ItemsTable extends Items with TableInfo<$ItemsTable, Item> {
         requiredDuringInsert: false,
         defaultValue: const Constant(10.0),
       );
+  static const VerificationMeta _brandMeta = const VerificationMeta('brand');
+  @override
+  late final GeneratedColumn<String> brand = GeneratedColumn<String>(
+    'brand',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _imagePathMeta = const VerificationMeta(
+    'imagePath',
+  );
+  @override
+  late final GeneratedColumn<String> imagePath = GeneratedColumn<String>(
+    'image_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1058,6 +1078,8 @@ class $ItemsTable extends Items with TableInfo<$ItemsTable, Item> {
     stockQty,
     unit,
     lowStockThreshold,
+    brand,
+    imagePath,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1141,6 +1163,18 @@ class $ItemsTable extends Items with TableInfo<$ItemsTable, Item> {
         ),
       );
     }
+    if (data.containsKey('brand')) {
+      context.handle(
+        _brandMeta,
+        brand.isAcceptableOrUnknown(data['brand']!, _brandMeta),
+      );
+    }
+    if (data.containsKey('image_path')) {
+      context.handle(
+        _imagePathMeta,
+        imagePath.isAcceptableOrUnknown(data['image_path']!, _imagePathMeta),
+      );
+    }
     return context;
   }
 
@@ -1186,6 +1220,14 @@ class $ItemsTable extends Items with TableInfo<$ItemsTable, Item> {
         DriftSqlType.double,
         data['${effectivePrefix}low_stock_threshold'],
       )!,
+      brand: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}brand'],
+      ),
+      imagePath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}image_path'],
+      ),
     );
   }
 
@@ -1205,6 +1247,8 @@ class Item extends DataClass implements Insertable<Item> {
   final double stockQty;
   final String unit;
   final double lowStockThreshold;
+  final String? brand;
+  final String? imagePath;
   const Item({
     required this.id,
     required this.categoryId,
@@ -1215,6 +1259,8 @@ class Item extends DataClass implements Insertable<Item> {
     required this.stockQty,
     required this.unit,
     required this.lowStockThreshold,
+    this.brand,
+    this.imagePath,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1228,6 +1274,12 @@ class Item extends DataClass implements Insertable<Item> {
     map['stock_qty'] = Variable<double>(stockQty);
     map['unit'] = Variable<String>(unit);
     map['low_stock_threshold'] = Variable<double>(lowStockThreshold);
+    if (!nullToAbsent || brand != null) {
+      map['brand'] = Variable<String>(brand);
+    }
+    if (!nullToAbsent || imagePath != null) {
+      map['image_path'] = Variable<String>(imagePath);
+    }
     return map;
   }
 
@@ -1242,6 +1294,12 @@ class Item extends DataClass implements Insertable<Item> {
       stockQty: Value(stockQty),
       unit: Value(unit),
       lowStockThreshold: Value(lowStockThreshold),
+      brand: brand == null && nullToAbsent
+          ? const Value.absent()
+          : Value(brand),
+      imagePath: imagePath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(imagePath),
     );
   }
 
@@ -1260,6 +1318,8 @@ class Item extends DataClass implements Insertable<Item> {
       stockQty: serializer.fromJson<double>(json['stockQty']),
       unit: serializer.fromJson<String>(json['unit']),
       lowStockThreshold: serializer.fromJson<double>(json['lowStockThreshold']),
+      brand: serializer.fromJson<String?>(json['brand']),
+      imagePath: serializer.fromJson<String?>(json['imagePath']),
     );
   }
   @override
@@ -1275,6 +1335,8 @@ class Item extends DataClass implements Insertable<Item> {
       'stockQty': serializer.toJson<double>(stockQty),
       'unit': serializer.toJson<String>(unit),
       'lowStockThreshold': serializer.toJson<double>(lowStockThreshold),
+      'brand': serializer.toJson<String?>(brand),
+      'imagePath': serializer.toJson<String?>(imagePath),
     };
   }
 
@@ -1288,6 +1350,8 @@ class Item extends DataClass implements Insertable<Item> {
     double? stockQty,
     String? unit,
     double? lowStockThreshold,
+    Value<String?> brand = const Value.absent(),
+    Value<String?> imagePath = const Value.absent(),
   }) => Item(
     id: id ?? this.id,
     categoryId: categoryId ?? this.categoryId,
@@ -1298,6 +1362,8 @@ class Item extends DataClass implements Insertable<Item> {
     stockQty: stockQty ?? this.stockQty,
     unit: unit ?? this.unit,
     lowStockThreshold: lowStockThreshold ?? this.lowStockThreshold,
+    brand: brand.present ? brand.value : this.brand,
+    imagePath: imagePath.present ? imagePath.value : this.imagePath,
   );
   Item copyWithCompanion(ItemsCompanion data) {
     return Item(
@@ -1318,6 +1384,8 @@ class Item extends DataClass implements Insertable<Item> {
       lowStockThreshold: data.lowStockThreshold.present
           ? data.lowStockThreshold.value
           : this.lowStockThreshold,
+      brand: data.brand.present ? data.brand.value : this.brand,
+      imagePath: data.imagePath.present ? data.imagePath.value : this.imagePath,
     );
   }
 
@@ -1332,7 +1400,9 @@ class Item extends DataClass implements Insertable<Item> {
           ..write('sellingPrice: $sellingPrice, ')
           ..write('stockQty: $stockQty, ')
           ..write('unit: $unit, ')
-          ..write('lowStockThreshold: $lowStockThreshold')
+          ..write('lowStockThreshold: $lowStockThreshold, ')
+          ..write('brand: $brand, ')
+          ..write('imagePath: $imagePath')
           ..write(')'))
         .toString();
   }
@@ -1348,6 +1418,8 @@ class Item extends DataClass implements Insertable<Item> {
     stockQty,
     unit,
     lowStockThreshold,
+    brand,
+    imagePath,
   );
   @override
   bool operator ==(Object other) =>
@@ -1361,7 +1433,9 @@ class Item extends DataClass implements Insertable<Item> {
           other.sellingPrice == this.sellingPrice &&
           other.stockQty == this.stockQty &&
           other.unit == this.unit &&
-          other.lowStockThreshold == this.lowStockThreshold);
+          other.lowStockThreshold == this.lowStockThreshold &&
+          other.brand == this.brand &&
+          other.imagePath == this.imagePath);
 }
 
 class ItemsCompanion extends UpdateCompanion<Item> {
@@ -1374,6 +1448,8 @@ class ItemsCompanion extends UpdateCompanion<Item> {
   final Value<double> stockQty;
   final Value<String> unit;
   final Value<double> lowStockThreshold;
+  final Value<String?> brand;
+  final Value<String?> imagePath;
   const ItemsCompanion({
     this.id = const Value.absent(),
     this.categoryId = const Value.absent(),
@@ -1384,6 +1460,8 @@ class ItemsCompanion extends UpdateCompanion<Item> {
     this.stockQty = const Value.absent(),
     this.unit = const Value.absent(),
     this.lowStockThreshold = const Value.absent(),
+    this.brand = const Value.absent(),
+    this.imagePath = const Value.absent(),
   });
   ItemsCompanion.insert({
     this.id = const Value.absent(),
@@ -1395,6 +1473,8 @@ class ItemsCompanion extends UpdateCompanion<Item> {
     this.stockQty = const Value.absent(),
     this.unit = const Value.absent(),
     this.lowStockThreshold = const Value.absent(),
+    this.brand = const Value.absent(),
+    this.imagePath = const Value.absent(),
   }) : categoryId = Value(categoryId),
        nameEn = Value(nameEn),
        nameHi = Value(nameHi),
@@ -1410,6 +1490,8 @@ class ItemsCompanion extends UpdateCompanion<Item> {
     Expression<double>? stockQty,
     Expression<String>? unit,
     Expression<double>? lowStockThreshold,
+    Expression<String>? brand,
+    Expression<String>? imagePath,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1421,6 +1503,8 @@ class ItemsCompanion extends UpdateCompanion<Item> {
       if (stockQty != null) 'stock_qty': stockQty,
       if (unit != null) 'unit': unit,
       if (lowStockThreshold != null) 'low_stock_threshold': lowStockThreshold,
+      if (brand != null) 'brand': brand,
+      if (imagePath != null) 'image_path': imagePath,
     });
   }
 
@@ -1434,6 +1518,8 @@ class ItemsCompanion extends UpdateCompanion<Item> {
     Value<double>? stockQty,
     Value<String>? unit,
     Value<double>? lowStockThreshold,
+    Value<String?>? brand,
+    Value<String?>? imagePath,
   }) {
     return ItemsCompanion(
       id: id ?? this.id,
@@ -1445,6 +1531,8 @@ class ItemsCompanion extends UpdateCompanion<Item> {
       stockQty: stockQty ?? this.stockQty,
       unit: unit ?? this.unit,
       lowStockThreshold: lowStockThreshold ?? this.lowStockThreshold,
+      brand: brand ?? this.brand,
+      imagePath: imagePath ?? this.imagePath,
     );
   }
 
@@ -1478,6 +1566,12 @@ class ItemsCompanion extends UpdateCompanion<Item> {
     if (lowStockThreshold.present) {
       map['low_stock_threshold'] = Variable<double>(lowStockThreshold.value);
     }
+    if (brand.present) {
+      map['brand'] = Variable<String>(brand.value);
+    }
+    if (imagePath.present) {
+      map['image_path'] = Variable<String>(imagePath.value);
+    }
     return map;
   }
 
@@ -1492,7 +1586,9 @@ class ItemsCompanion extends UpdateCompanion<Item> {
           ..write('sellingPrice: $sellingPrice, ')
           ..write('stockQty: $stockQty, ')
           ..write('unit: $unit, ')
-          ..write('lowStockThreshold: $lowStockThreshold')
+          ..write('lowStockThreshold: $lowStockThreshold, ')
+          ..write('brand: $brand, ')
+          ..write('imagePath: $imagePath')
           ..write(')'))
         .toString();
   }
@@ -2770,6 +2866,462 @@ class PaymentsCompanion extends UpdateCompanion<Payment> {
   }
 }
 
+class $AuditLogsTable extends AuditLogs
+    with TableInfo<$AuditLogsTable, AuditLog> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AuditLogsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _timestampMeta = const VerificationMeta(
+    'timestamp',
+  );
+  @override
+  late final GeneratedColumn<DateTime> timestamp = GeneratedColumn<DateTime>(
+    'timestamp',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<int> userId = GeneratedColumn<int>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES users (id)',
+    ),
+  );
+  static const VerificationMeta _usernameMeta = const VerificationMeta(
+    'username',
+  );
+  @override
+  late final GeneratedColumn<String> username = GeneratedColumn<String>(
+    'username',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _actionTypeMeta = const VerificationMeta(
+    'actionType',
+  );
+  @override
+  late final GeneratedColumn<String> actionType = GeneratedColumn<String>(
+    'action_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _entityIdMeta = const VerificationMeta(
+    'entityId',
+  );
+  @override
+  late final GeneratedColumn<String> entityId = GeneratedColumn<String>(
+    'entity_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _detailsMeta = const VerificationMeta(
+    'details',
+  );
+  @override
+  late final GeneratedColumn<String> details = GeneratedColumn<String>(
+    'details',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    timestamp,
+    userId,
+    username,
+    actionType,
+    entityId,
+    details,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'audit_logs';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<AuditLog> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('timestamp')) {
+      context.handle(
+        _timestampMeta,
+        timestamp.isAcceptableOrUnknown(data['timestamp']!, _timestampMeta),
+      );
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('username')) {
+      context.handle(
+        _usernameMeta,
+        username.isAcceptableOrUnknown(data['username']!, _usernameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_usernameMeta);
+    }
+    if (data.containsKey('action_type')) {
+      context.handle(
+        _actionTypeMeta,
+        actionType.isAcceptableOrUnknown(data['action_type']!, _actionTypeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_actionTypeMeta);
+    }
+    if (data.containsKey('entity_id')) {
+      context.handle(
+        _entityIdMeta,
+        entityId.isAcceptableOrUnknown(data['entity_id']!, _entityIdMeta),
+      );
+    }
+    if (data.containsKey('details')) {
+      context.handle(
+        _detailsMeta,
+        details.isAcceptableOrUnknown(data['details']!, _detailsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_detailsMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  AuditLog map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AuditLog(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      timestamp: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}timestamp'],
+      )!,
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}user_id'],
+      )!,
+      username: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}username'],
+      )!,
+      actionType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}action_type'],
+      )!,
+      entityId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}entity_id'],
+      ),
+      details: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}details'],
+      )!,
+    );
+  }
+
+  @override
+  $AuditLogsTable createAlias(String alias) {
+    return $AuditLogsTable(attachedDatabase, alias);
+  }
+}
+
+class AuditLog extends DataClass implements Insertable<AuditLog> {
+  final int id;
+  final DateTime timestamp;
+  final int userId;
+  final String username;
+  final String actionType;
+  final String? entityId;
+  final String details;
+  const AuditLog({
+    required this.id,
+    required this.timestamp,
+    required this.userId,
+    required this.username,
+    required this.actionType,
+    this.entityId,
+    required this.details,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['timestamp'] = Variable<DateTime>(timestamp);
+    map['user_id'] = Variable<int>(userId);
+    map['username'] = Variable<String>(username);
+    map['action_type'] = Variable<String>(actionType);
+    if (!nullToAbsent || entityId != null) {
+      map['entity_id'] = Variable<String>(entityId);
+    }
+    map['details'] = Variable<String>(details);
+    return map;
+  }
+
+  AuditLogsCompanion toCompanion(bool nullToAbsent) {
+    return AuditLogsCompanion(
+      id: Value(id),
+      timestamp: Value(timestamp),
+      userId: Value(userId),
+      username: Value(username),
+      actionType: Value(actionType),
+      entityId: entityId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(entityId),
+      details: Value(details),
+    );
+  }
+
+  factory AuditLog.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AuditLog(
+      id: serializer.fromJson<int>(json['id']),
+      timestamp: serializer.fromJson<DateTime>(json['timestamp']),
+      userId: serializer.fromJson<int>(json['userId']),
+      username: serializer.fromJson<String>(json['username']),
+      actionType: serializer.fromJson<String>(json['actionType']),
+      entityId: serializer.fromJson<String?>(json['entityId']),
+      details: serializer.fromJson<String>(json['details']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'timestamp': serializer.toJson<DateTime>(timestamp),
+      'userId': serializer.toJson<int>(userId),
+      'username': serializer.toJson<String>(username),
+      'actionType': serializer.toJson<String>(actionType),
+      'entityId': serializer.toJson<String?>(entityId),
+      'details': serializer.toJson<String>(details),
+    };
+  }
+
+  AuditLog copyWith({
+    int? id,
+    DateTime? timestamp,
+    int? userId,
+    String? username,
+    String? actionType,
+    Value<String?> entityId = const Value.absent(),
+    String? details,
+  }) => AuditLog(
+    id: id ?? this.id,
+    timestamp: timestamp ?? this.timestamp,
+    userId: userId ?? this.userId,
+    username: username ?? this.username,
+    actionType: actionType ?? this.actionType,
+    entityId: entityId.present ? entityId.value : this.entityId,
+    details: details ?? this.details,
+  );
+  AuditLog copyWithCompanion(AuditLogsCompanion data) {
+    return AuditLog(
+      id: data.id.present ? data.id.value : this.id,
+      timestamp: data.timestamp.present ? data.timestamp.value : this.timestamp,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      username: data.username.present ? data.username.value : this.username,
+      actionType: data.actionType.present
+          ? data.actionType.value
+          : this.actionType,
+      entityId: data.entityId.present ? data.entityId.value : this.entityId,
+      details: data.details.present ? data.details.value : this.details,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AuditLog(')
+          ..write('id: $id, ')
+          ..write('timestamp: $timestamp, ')
+          ..write('userId: $userId, ')
+          ..write('username: $username, ')
+          ..write('actionType: $actionType, ')
+          ..write('entityId: $entityId, ')
+          ..write('details: $details')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    timestamp,
+    userId,
+    username,
+    actionType,
+    entityId,
+    details,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AuditLog &&
+          other.id == this.id &&
+          other.timestamp == this.timestamp &&
+          other.userId == this.userId &&
+          other.username == this.username &&
+          other.actionType == this.actionType &&
+          other.entityId == this.entityId &&
+          other.details == this.details);
+}
+
+class AuditLogsCompanion extends UpdateCompanion<AuditLog> {
+  final Value<int> id;
+  final Value<DateTime> timestamp;
+  final Value<int> userId;
+  final Value<String> username;
+  final Value<String> actionType;
+  final Value<String?> entityId;
+  final Value<String> details;
+  const AuditLogsCompanion({
+    this.id = const Value.absent(),
+    this.timestamp = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.username = const Value.absent(),
+    this.actionType = const Value.absent(),
+    this.entityId = const Value.absent(),
+    this.details = const Value.absent(),
+  });
+  AuditLogsCompanion.insert({
+    this.id = const Value.absent(),
+    this.timestamp = const Value.absent(),
+    required int userId,
+    required String username,
+    required String actionType,
+    this.entityId = const Value.absent(),
+    required String details,
+  }) : userId = Value(userId),
+       username = Value(username),
+       actionType = Value(actionType),
+       details = Value(details);
+  static Insertable<AuditLog> custom({
+    Expression<int>? id,
+    Expression<DateTime>? timestamp,
+    Expression<int>? userId,
+    Expression<String>? username,
+    Expression<String>? actionType,
+    Expression<String>? entityId,
+    Expression<String>? details,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (timestamp != null) 'timestamp': timestamp,
+      if (userId != null) 'user_id': userId,
+      if (username != null) 'username': username,
+      if (actionType != null) 'action_type': actionType,
+      if (entityId != null) 'entity_id': entityId,
+      if (details != null) 'details': details,
+    });
+  }
+
+  AuditLogsCompanion copyWith({
+    Value<int>? id,
+    Value<DateTime>? timestamp,
+    Value<int>? userId,
+    Value<String>? username,
+    Value<String>? actionType,
+    Value<String?>? entityId,
+    Value<String>? details,
+  }) {
+    return AuditLogsCompanion(
+      id: id ?? this.id,
+      timestamp: timestamp ?? this.timestamp,
+      userId: userId ?? this.userId,
+      username: username ?? this.username,
+      actionType: actionType ?? this.actionType,
+      entityId: entityId ?? this.entityId,
+      details: details ?? this.details,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (timestamp.present) {
+      map['timestamp'] = Variable<DateTime>(timestamp.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<int>(userId.value);
+    }
+    if (username.present) {
+      map['username'] = Variable<String>(username.value);
+    }
+    if (actionType.present) {
+      map['action_type'] = Variable<String>(actionType.value);
+    }
+    if (entityId.present) {
+      map['entity_id'] = Variable<String>(entityId.value);
+    }
+    if (details.present) {
+      map['details'] = Variable<String>(details.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AuditLogsCompanion(')
+          ..write('id: $id, ')
+          ..write('timestamp: $timestamp, ')
+          ..write('userId: $userId, ')
+          ..write('username: $username, ')
+          ..write('actionType: $actionType, ')
+          ..write('entityId: $entityId, ')
+          ..write('details: $details')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2780,6 +3332,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $SalesTable sales = $SalesTable(this);
   late final $SaleItemsTable saleItems = $SaleItemsTable(this);
   late final $PaymentsTable payments = $PaymentsTable(this);
+  late final $AuditLogsTable auditLogs = $AuditLogsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2792,6 +3345,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     sales,
     saleItems,
     payments,
+    auditLogs,
   ];
 }
 
@@ -2828,6 +3382,24 @@ final class $$UsersTableReferences
     ).filter((f) => f.userId.id.sqlEquals($_itemColumn<int>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_salesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$AuditLogsTable, List<AuditLog>>
+  _auditLogsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.auditLogs,
+    aliasName: 'users__id__audit_logs__user_id',
+  );
+
+  $$AuditLogsTableProcessedTableManager get auditLogsRefs {
+    final manager = $$AuditLogsTableTableManager(
+      $_db,
+      $_db.auditLogs,
+    ).filter((f) => f.userId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_auditLogsRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -2883,6 +3455,31 @@ class $$UsersTableFilterComposer extends Composer<_$AppDatabase, $UsersTable> {
           }) => $$SalesTableFilterComposer(
             $db: $db,
             $table: $db.sales,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> auditLogsRefs(
+    Expression<bool> Function($$AuditLogsTableFilterComposer f) f,
+  ) {
+    final $$AuditLogsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.auditLogs,
+      getReferencedColumn: (t) => t.userId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AuditLogsTableFilterComposer(
+            $db: $db,
+            $table: $db.auditLogs,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -2978,6 +3575,31 @@ class $$UsersTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> auditLogsRefs<T extends Object>(
+    Expression<T> Function($$AuditLogsTableAnnotationComposer a) f,
+  ) {
+    final $$AuditLogsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.auditLogs,
+      getReferencedColumn: (t) => t.userId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AuditLogsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.auditLogs,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$UsersTableTableManager
@@ -2993,7 +3615,7 @@ class $$UsersTableTableManager
           $$UsersTableUpdateCompanionBuilder,
           (User, $$UsersTableReferences),
           User,
-          PrefetchHooks Function({bool salesRefs})
+          PrefetchHooks Function({bool salesRefs, bool auditLogsRefs})
         > {
   $$UsersTableTableManager(_$AppDatabase db, $UsersTable table)
     : super(
@@ -3042,10 +3664,13 @@ class $$UsersTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({salesRefs = false}) {
+          prefetchHooksCallback: ({salesRefs = false, auditLogsRefs = false}) {
             return PrefetchHooks(
               db: db,
-              explicitlyWatchedTables: [if (salesRefs) db.sales],
+              explicitlyWatchedTables: [
+                if (salesRefs) db.sales,
+                if (auditLogsRefs) db.auditLogs,
+              ],
               addJoins: null,
               getPrefetchedDataCallback: (items) async {
                 return [
@@ -3062,6 +3687,22 @@ class $$UsersTableTableManager
                       ),
                       managerFromTypedResult: (p0) =>
                           $$UsersTableReferences(db, table, p0).salesRefs,
+                      currentColumn: 'id',
+                      referencedColumn: 'user_id',
+                      typedResults: items,
+                    ),
+                  if (auditLogsRefs)
+                    await $_getPrefetchedDataByColumns<
+                      User,
+                      $UsersTable,
+                      AuditLog,
+                      $AuditLogsTable
+                    >(
+                      currentTable: table,
+                      referencedTable: $$UsersTableReferences
+                          ._auditLogsRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$UsersTableReferences(db, table, p0).auditLogsRefs,
                       currentColumn: 'id',
                       referencedColumn: 'user_id',
                       typedResults: items,
@@ -3086,7 +3727,7 @@ typedef $$UsersTableProcessedTableManager =
       $$UsersTableUpdateCompanionBuilder,
       (User, $$UsersTableReferences),
       User,
-      PrefetchHooks Function({bool salesRefs})
+      PrefetchHooks Function({bool salesRefs, bool auditLogsRefs})
     >;
 typedef $$CustomersTableCreateCompanionBuilder = CustomersCompanion Function({
   Value<int> id,
@@ -3729,6 +4370,8 @@ typedef $$ItemsTableCreateCompanionBuilder = ItemsCompanion Function({
   Value<double> stockQty,
   Value<String> unit,
   Value<double> lowStockThreshold,
+  Value<String?> brand,
+  Value<String?> imagePath,
 });
 typedef $$ItemsTableUpdateCompanionBuilder = ItemsCompanion Function({
   Value<int> id,
@@ -3740,6 +4383,8 @@ typedef $$ItemsTableUpdateCompanionBuilder = ItemsCompanion Function({
   Value<double> stockQty,
   Value<String> unit,
   Value<double> lowStockThreshold,
+  Value<String?> brand,
+  Value<String?> imagePath,
 });
 
 final class $$ItemsTableReferences
@@ -3827,6 +4472,16 @@ class $$ItemsTableFilterComposer extends Composer<_$AppDatabase, $ItemsTable> {
 
   ColumnFilters<double> get lowStockThreshold => $composableBuilder(
     column: $table.lowStockThreshold,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get brand => $composableBuilder(
+    column: $table.brand,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get imagePath => $composableBuilder(
+    column: $table.imagePath,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3928,6 +4583,16 @@ class $$ItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get brand => $composableBuilder(
+    column: $table.brand,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get imagePath => $composableBuilder(
+    column: $table.imagePath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$CategoriesTableOrderingComposer get categoryId {
     final $$CategoriesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -3990,6 +4655,12 @@ class $$ItemsTableAnnotationComposer
     column: $table.lowStockThreshold,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get brand =>
+      $composableBuilder(column: $table.brand, builder: (column) => column);
+
+  GeneratedColumn<String> get imagePath =>
+      $composableBuilder(column: $table.imagePath, builder: (column) => column);
 
   $$CategoriesTableAnnotationComposer get categoryId {
     final $$CategoriesTableAnnotationComposer composer = $composerBuilder(
@@ -4077,6 +4748,8 @@ class $$ItemsTableTableManager
                 Value<double> stockQty = const Value.absent(),
                 Value<String> unit = const Value.absent(),
                 Value<double> lowStockThreshold = const Value.absent(),
+                Value<String?> brand = const Value.absent(),
+                Value<String?> imagePath = const Value.absent(),
               }) => ItemsCompanion(
                 id: id,
                 categoryId: categoryId,
@@ -4087,6 +4760,8 @@ class $$ItemsTableTableManager
                 stockQty: stockQty,
                 unit: unit,
                 lowStockThreshold: lowStockThreshold,
+                brand: brand,
+                imagePath: imagePath,
               ),
           createCompanionCallback:
               ({
@@ -4099,6 +4774,8 @@ class $$ItemsTableTableManager
                 Value<double> stockQty = const Value.absent(),
                 Value<String> unit = const Value.absent(),
                 Value<double> lowStockThreshold = const Value.absent(),
+                Value<String?> brand = const Value.absent(),
+                Value<String?> imagePath = const Value.absent(),
               }) => ItemsCompanion.insert(
                 id: id,
                 categoryId: categoryId,
@@ -4109,6 +4786,8 @@ class $$ItemsTableTableManager
                 stockQty: stockQty,
                 unit: unit,
                 lowStockThreshold: lowStockThreshold,
+                brand: brand,
+                imagePath: imagePath,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -5458,6 +6137,353 @@ typedef $$PaymentsTableProcessedTableManager =
       Payment,
       PrefetchHooks Function({bool customerId})
     >;
+typedef $$AuditLogsTableCreateCompanionBuilder = AuditLogsCompanion Function({
+  Value<int> id,
+  Value<DateTime> timestamp,
+  required int userId,
+  required String username,
+  required String actionType,
+  Value<String?> entityId,
+  required String details,
+});
+typedef $$AuditLogsTableUpdateCompanionBuilder = AuditLogsCompanion Function({
+  Value<int> id,
+  Value<DateTime> timestamp,
+  Value<int> userId,
+  Value<String> username,
+  Value<String> actionType,
+  Value<String?> entityId,
+  Value<String> details,
+});
+
+final class $$AuditLogsTableReferences
+    extends BaseReferences<_$AppDatabase, $AuditLogsTable, AuditLog> {
+  $$AuditLogsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $UsersTable _userIdTable(_$AppDatabase db) =>
+      db.users.createAlias('audit_logs__user_id__users__id');
+
+  $$UsersTableProcessedTableManager get userId {
+    final $_column = $_itemColumn<int>('user_id')!;
+
+    final manager = $$UsersTableTableManager(
+      $_db,
+      $_db.users,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_userIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$AuditLogsTableFilterComposer
+    extends Composer<_$AppDatabase, $AuditLogsTable> {
+  $$AuditLogsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get timestamp => $composableBuilder(
+    column: $table.timestamp,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get username => $composableBuilder(
+    column: $table.username,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get actionType => $composableBuilder(
+    column: $table.actionType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get entityId => $composableBuilder(
+    column: $table.entityId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get details => $composableBuilder(
+    column: $table.details,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$UsersTableFilterComposer get userId {
+    final $$UsersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.userId,
+      referencedTable: $db.users,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UsersTableFilterComposer(
+            $db: $db,
+            $table: $db.users,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$AuditLogsTableOrderingComposer
+    extends Composer<_$AppDatabase, $AuditLogsTable> {
+  $$AuditLogsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get timestamp => $composableBuilder(
+    column: $table.timestamp,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get username => $composableBuilder(
+    column: $table.username,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get actionType => $composableBuilder(
+    column: $table.actionType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get entityId => $composableBuilder(
+    column: $table.entityId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get details => $composableBuilder(
+    column: $table.details,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$UsersTableOrderingComposer get userId {
+    final $$UsersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.userId,
+      referencedTable: $db.users,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UsersTableOrderingComposer(
+            $db: $db,
+            $table: $db.users,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$AuditLogsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AuditLogsTable> {
+  $$AuditLogsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get timestamp =>
+      $composableBuilder(column: $table.timestamp, builder: (column) => column);
+
+  GeneratedColumn<String> get username =>
+      $composableBuilder(column: $table.username, builder: (column) => column);
+
+  GeneratedColumn<String> get actionType => $composableBuilder(
+    column: $table.actionType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get entityId =>
+      $composableBuilder(column: $table.entityId, builder: (column) => column);
+
+  GeneratedColumn<String> get details =>
+      $composableBuilder(column: $table.details, builder: (column) => column);
+
+  $$UsersTableAnnotationComposer get userId {
+    final $$UsersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.userId,
+      referencedTable: $db.users,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UsersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.users,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$AuditLogsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $AuditLogsTable,
+          AuditLog,
+          $$AuditLogsTableFilterComposer,
+          $$AuditLogsTableOrderingComposer,
+          $$AuditLogsTableAnnotationComposer,
+          $$AuditLogsTableCreateCompanionBuilder,
+          $$AuditLogsTableUpdateCompanionBuilder,
+          (AuditLog, $$AuditLogsTableReferences),
+          AuditLog,
+          PrefetchHooks Function({bool userId})
+        > {
+  $$AuditLogsTableTableManager(_$AppDatabase db, $AuditLogsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AuditLogsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AuditLogsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AuditLogsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<DateTime> timestamp = const Value.absent(),
+                Value<int> userId = const Value.absent(),
+                Value<String> username = const Value.absent(),
+                Value<String> actionType = const Value.absent(),
+                Value<String?> entityId = const Value.absent(),
+                Value<String> details = const Value.absent(),
+              }) => AuditLogsCompanion(
+                id: id,
+                timestamp: timestamp,
+                userId: userId,
+                username: username,
+                actionType: actionType,
+                entityId: entityId,
+                details: details,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<DateTime> timestamp = const Value.absent(),
+                required int userId,
+                required String username,
+                required String actionType,
+                Value<String?> entityId = const Value.absent(),
+                required String details,
+              }) => AuditLogsCompanion.insert(
+                id: id,
+                timestamp: timestamp,
+                userId: userId,
+                username: username,
+                actionType: actionType,
+                entityId: entityId,
+                details: details,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$AuditLogsTable, AuditLog>(table),
+                  $$AuditLogsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({userId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (userId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.userId,
+                        referencedTable: $$AuditLogsTableReferences
+                            ._userIdTable(db),
+                        referencedColumn: $$AuditLogsTableReferences
+                            ._userIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$AuditLogsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $AuditLogsTable,
+      AuditLog,
+      $$AuditLogsTableFilterComposer,
+      $$AuditLogsTableOrderingComposer,
+      $$AuditLogsTableAnnotationComposer,
+      $$AuditLogsTableCreateCompanionBuilder,
+      $$AuditLogsTableUpdateCompanionBuilder,
+      (AuditLog, $$AuditLogsTableReferences),
+      AuditLog,
+      PrefetchHooks Function({bool userId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -5476,4 +6502,6 @@ class $AppDatabaseManager {
       $$SaleItemsTableTableManager(_db, _db.saleItems);
   $$PaymentsTableTableManager get payments =>
       $$PaymentsTableTableManager(_db, _db.payments);
+  $$AuditLogsTableTableManager get auditLogs =>
+      $$AuditLogsTableTableManager(_db, _db.auditLogs);
 }

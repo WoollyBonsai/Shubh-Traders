@@ -12,7 +12,7 @@ class UsersScreen extends ConsumerWidget {
     final usernameCtrl = TextEditingController();
     final nameCtrl = TextEditingController();
     final pinCtrl = TextEditingController();
-    String selectedRole = 'Staff';
+    String selectedRole = 'Employee';
     final formKey = GlobalKey<FormState>();
 
     showDialog(
@@ -66,8 +66,8 @@ class UsersScreen extends ConsumerWidget {
                       prefixIcon: Icon(Icons.security),
                     ),
                     items: const [
-                      DropdownMenuItem(value: 'Admin', child: Text('Admin (व्यवस्थापक)')),
-                      DropdownMenuItem(value: 'Staff', child: Text('Staff (कर्मचारी)')),
+                      DropdownMenuItem(value: 'Employee', child: Text('Employee / Staff (कर्मचारी)')),
+                      DropdownMenuItem(value: 'Admin', child: Text('Admin (व्यवस्थापक / मालिक)')),
                     ],
                     onChanged: (val) {
                       if (val != null) setState(() => selectedRole = val);

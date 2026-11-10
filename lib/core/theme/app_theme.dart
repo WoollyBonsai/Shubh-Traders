@@ -1,29 +1,40 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  // Brand Colors
-  static const Color primaryColor = Color(0xFF1E3A8A); // Deep Blue
-  static const Color secondaryColor = Color(0xFFD97706); // Construction Amber
-  static const Color successColor = Color(0xFF059669); // Emerald Cash
-  static const Color infoColor = Color(0xFF2563EB); // Online UPI Blue
-  static const Color warningColor = Color(0xFFD97706); // Amber
-  static const Color dangerColor = Color(0xFFDC2626); // Crimson Udhaar
-  static const Color surfaceLight = Color(0xFFF8FAFC);
-  static const Color surfaceDark = Color(0xFF0F172A);
+  // Vibrant, rich non-pale colors
+  static const Color primaryNavy = Color(0xFF0F2744); // Deep Navy Slate
+  static const Color primaryColor = Color(0xFF1E3A8A); // Royal Business Blue
+  static const Color successGreen = Color(0xFF15803D); // Rich Forest Green (Cash & Growth)
+  static const Color dangerRed = Color(0xFFB91C1C); // Strong Crimson (Udhaar & Alerts)
+  static const Color warningAmber = Color(0xFFD97706); // Rich Golden Amber (Highlights & Warnings)
+  static const Color accentGold = Color(0xFFB45309);
+  
+  // Surfaces
+  static const Color backgroundLight = Color(0xFFF4F6F9);
+  static const Color surfaceWhite = Color(0xFFFFFFFF);
+  static const Color borderGrey = Color(0xFFCBD5E1);
+  static const Color darkSlate = Color(0xFF0F172A);
+
+  // Aliases for compatibility
+  static const Color successColor = successGreen;
+  static const Color dangerColor = dangerRed;
+  static const Color warningColor = warningAmber;
+  static const Color secondaryColor = warningAmber;
+  static const Color infoColor = Color(0xFF2563EB);
 
   static ThemeData lightTheme(double fontMultiplier) {
     final base = ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: primaryColor,
+        seedColor: primaryNavy,
         brightness: Brightness.light,
-        primary: primaryColor,
-        secondary: secondaryColor,
-        error: dangerColor,
-        surface: surfaceLight,
+        primary: primaryNavy,
+        secondary: warningAmber,
+        error: dangerRed,
+        surface: surfaceWhite,
       ),
-      scaffoldBackgroundColor: const Color(0xFFF1F5F9),
+      scaffoldBackgroundColor: backgroundLight,
       fontFamily: 'Segoe UI',
     );
 
@@ -35,12 +46,12 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.dark,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: primaryColor,
+        seedColor: primaryNavy,
         brightness: Brightness.dark,
         primary: const Color(0xFF3B82F6),
-        secondary: secondaryColor,
-        error: dangerColor,
-        surface: surfaceDark,
+        secondary: warningAmber,
+        error: dangerRed,
+        surface: darkSlate,
       ),
       scaffoldBackgroundColor: const Color(0xFF0B0F19),
       fontFamily: 'Segoe UI',
@@ -78,13 +89,15 @@ class AppTheme {
         labelSmall: scale(textTheme.labelSmall),
       ),
       cardTheme: CardThemeData(
-        elevation: 0,
+        elevation: 1,
+        color: base.brightness == Brightness.light ? surfaceWhite : const Color(0xFF1E293B),
+        shadowColor: Colors.black.withValues(alpha: 0.06),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
           side: BorderSide(
             color: base.brightness == Brightness.light
                 ? const Color(0xFFE2E8F0)
-                : const Color(0xFF1E293B),
+                : const Color(0xFF334155),
           ),
         ),
       ),
@@ -95,19 +108,15 @@ class AppTheme {
             : const Color(0xFF1E293B),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(
-            color: base.brightness == Brightness.light
-                ? const Color(0xFFCBD5E1)
-                : const Color(0xFF334155),
-          ),
+          borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(
-            color: base.brightness == Brightness.light
-                ? const Color(0xFFCBD5E1)
-                : const Color(0xFF334155),
-          ),
+          borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: primaryNavy, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       ),
@@ -116,8 +125,14 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
+          elevation: 1,
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
         ),
+      ),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
       ),
     );
   }

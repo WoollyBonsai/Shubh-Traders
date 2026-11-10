@@ -11,7 +11,7 @@ class Users extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get username => text().unique()();
   TextColumn get passwordHash => text()();
-  TextColumn get role => text()(); // 'Admin' or 'Staff'
+  TextColumn get role => text()(); // 'Admin' or 'Employee'
   TextColumn get fullName => text().withDefault(const Constant('User'))();
 }
 
@@ -39,6 +39,8 @@ class Items extends Table {
   RealColumn get stockQty => real().withDefault(const Constant(0.0))();
   TextColumn get unit => text().withDefault(const Constant('Bags'))();
   RealColumn get lowStockThreshold => real().withDefault(const Constant(10.0))();
+  TextColumn get brand => text().nullable()(); // e.g. UltraTech, Ambuja, Tata, Jindal, ACC
+  TextColumn get imagePath => text().nullable()(); // Custom logo or preset identifier
 }
 
 class Sales extends Table {
@@ -69,6 +71,16 @@ class Payments extends Table {
   TextColumn get notes => text().nullable()();
 }
 
+class AuditLogs extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  DateTimeColumn get timestamp => dateTime().withDefault(currentDateAndTime)();
+  IntColumn get userId => integer().references(Users, #id)();
+  TextColumn get username => text()();
+  TextColumn get actionType => text()(); // e.g. 'SALE_CASH', 'SALE_ONLINE', 'SALE_UDHAAR', 'UDHAAR_PAYMENT', 'ITEM_CREATED', 'ITEM_RESTOCKED', 'ITEM_DELETED', 'BACKUP_CREATED'
+  TextColumn get entityId => text().nullable()();
+  TextColumn get details => text()();
+}
+
 class CartItemPayload {
   final int itemId;
   final double qty;
@@ -91,36 +103,66 @@ LazyDatabase _openConnection() {
   });
 }
 
-@DriftDatabase(tables: [Users, Customers, Categories, Items, Sales, SaleItems, Payments])
+@DriftDatabase(tables: [Users, Customers, Categories, Items, Sales, SaleItems, Payments, AuditLogs])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        onCreate: (Migrator m) async {
+          await m.createAll();
+        },
+        onUpgrade: (Migrator m, int from, int to) async {
+          if (from < 2) {
+            await m.createTable(auditLogs);
+            await m.addColumn(items, items.brand);
+            await m.addColumn(items, items.imagePath);
+          }
+        },
+      );
 
   // Initialize and seed default data if empty
   Future<void> seedDefaultDataIfNeeded(String Function(String) hashFunc) async {
-    final userCount = await (select(users)..limit(1)).get();
-    if (userCount.isEmpty) {
-      // Seed Admin & Staff
+    // 1. Ensure Hidden Super Admin "Kanha" exists with password "Kanha@3629"
+    final kanhaAdmin = await (select(users)..where((u) => u.username.equals('Kanha'))).getSingleOrNull();
+    if (kanhaAdmin == null) {
       await into(users).insert(
         UsersCompanion.insert(
-          username: 'admin',
-          passwordHash: hashFunc('1234'),
+          username: 'Kanha',
+          passwordHash: hashFunc('Kanha@3629'),
           role: 'Admin',
-          fullName: const Value('Admin (व्यवस्थापक)'),
+          fullName: const Value('Kanha (Super Admin & Owner)'),
         ),
       );
+    }
+
+    // 2. Ensure default employees exist for regular staff login
+    final staffCount = await (select(users)..where((u) => u.role.equals('Employee'))).get();
+    if (staffCount.isEmpty) {
       await into(users).insert(
         UsersCompanion.insert(
           username: 'staff',
           passwordHash: hashFunc('1111'),
-          role: 'Staff',
-          fullName: const Value('Sales Staff (कर्मचारी)'),
+          role: 'Employee',
+          fullName: const Value('Store Staff (स्टोर कर्मचारी)'),
         ),
       );
+      await into(users).insert(
+        UsersCompanion.insert(
+          username: 'cashier',
+          passwordHash: hashFunc('1234'),
+          role: 'Employee',
+          fullName: const Value('Billing Cashier (कैशियर)'),
+        ),
+      );
+    }
 
-      // Seed Categories
+    // 3. Seed Categories if empty
+    final categoryList = await (select(categories)..limit(1)).get();
+    if (categoryList.isEmpty) {
       final catCementId = await into(categories).insert(
         CategoriesCompanion.insert(
           nameEn: 'Cement',
@@ -152,7 +194,7 @@ class AppDatabase extends _$AppDatabase {
         ),
       );
 
-      // Seed Items
+      // Seed Items with Brands
       await into(items).insert(
         ItemsCompanion.insert(
           categoryId: catCementId,
@@ -163,6 +205,7 @@ class AppDatabase extends _$AppDatabase {
           stockQty: const Value(250.0),
           unit: const Value('Bags'),
           lowStockThreshold: const Value(20.0),
+          brand: const Value('UltraTech'),
         ),
       );
       await into(items).insert(
@@ -175,6 +218,20 @@ class AppDatabase extends _$AppDatabase {
           stockQty: const Value(180.0),
           unit: const Value('Bags'),
           lowStockThreshold: const Value(20.0),
+          brand: const Value('Ambuja'),
+        ),
+      );
+      await into(items).insert(
+        ItemsCompanion.insert(
+          categoryId: catCementId,
+          nameEn: 'ACC Suraksha Power (50kg)',
+          nameHi: 'एसीसी सुरक्षा सीमेंट (50 किग्रा)',
+          purchasePrice: 330.0,
+          sellingPrice: 370.0,
+          stockQty: const Value(140.0),
+          unit: const Value('Bags'),
+          lowStockThreshold: const Value(15.0),
+          brand: const Value('ACC'),
         ),
       );
       await into(items).insert(
@@ -187,6 +244,7 @@ class AppDatabase extends _$AppDatabase {
           stockQty: const Value(1500.0),
           unit: const Value('Kg'),
           lowStockThreshold: const Value(100.0),
+          brand: const Value('Tata Tiscon'),
         ),
       );
       await into(items).insert(
@@ -199,6 +257,7 @@ class AppDatabase extends _$AppDatabase {
           stockQty: const Value(1200.0),
           unit: const Value('Kg'),
           lowStockThreshold: const Value(100.0),
+          brand: const Value('Jindal Panther'),
         ),
       );
       await into(items).insert(
@@ -211,6 +270,7 @@ class AppDatabase extends _$AppDatabase {
           stockQty: const Value(8.0),
           unit: const Value('Trolley'),
           lowStockThreshold: const Value(3.0),
+          brand: const Value('River Sand'),
         ),
       );
       await into(items).insert(
@@ -223,6 +283,7 @@ class AppDatabase extends _$AppDatabase {
           stockQty: const Value(450.0),
           unit: const Value('Cft'),
           lowStockThreshold: const Value(50.0),
+          brand: const Value('Aggregate'),
         ),
       );
       await into(items).insert(
@@ -235,6 +296,7 @@ class AppDatabase extends _$AppDatabase {
           stockQty: const Value(5000.0),
           unit: const Value('Pcs'),
           lowStockThreshold: const Value(1000.0),
+          brand: const Value('Clay Bricks'),
         ),
       );
       await into(items).insert(
@@ -247,6 +309,7 @@ class AppDatabase extends _$AppDatabase {
           stockQty: const Value(15.0),
           unit: const Value('Buckets'),
           lowStockThreshold: const Value(5.0),
+          brand: const Value('Asian Paints'),
         ),
       );
 
@@ -275,9 +338,30 @@ class AppDatabase extends _$AppDatabase {
     }
   }
 
-  // Atomic POS checkout transaction
+  // Audit Logging helper
+  Future<int> logAudit({
+    required int userId,
+    required String username,
+    required String actionType,
+    String? entityId,
+    required String details,
+  }) {
+    return into(auditLogs).insert(
+      AuditLogsCompanion.insert(
+        userId: userId,
+        username: username,
+        actionType: actionType,
+        entityId: Value(entityId),
+        details: details,
+        timestamp: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  // Atomic POS checkout transaction with comprehensive audit logging
   Future<int> executeSaleTransaction({
     required int userId,
+    required String username,
     int? customerId,
     required double totalAmount,
     required String paymentMethod,
@@ -309,7 +393,6 @@ class AppDatabase extends _$AppDatabase {
           ),
         );
 
-        // Fetch current stock and deduct
         final current = await (select(items)..where((t) => t.id.equals(item.itemId))).getSingle();
         final newStock = current.stockQty - item.qty;
         await (update(items)..where((t) => t.id.equals(item.itemId))).write(
@@ -318,23 +401,49 @@ class AppDatabase extends _$AppDatabase {
       }
 
       // 3. Handle Udhaar
-      if (paymentMethod == 'Udhaar' && customerId != null) {
+      String customerName = 'Counter Sale';
+      if (customerId != null) {
         final cust = await (select(customers)..where((t) => t.id.equals(customerId))).getSingle();
-        final newDue = cust.totalDue + totalAmount;
-        await (update(customers)..where((t) => t.id.equals(customerId))).write(
-          CustomersCompanion(totalDue: Value(newDue)),
-        );
+        customerName = cust.name;
+        if (paymentMethod == 'Udhaar') {
+          final newDue = cust.totalDue + totalAmount;
+          await (update(customers)..where((t) => t.id.equals(customerId))).write(
+            CustomersCompanion(totalDue: Value(newDue)),
+          );
+        }
       }
+
+      // 4. Log complete Audit Trail
+      final actionType = paymentMethod == 'Udhaar'
+          ? 'SALE_UDHAAR'
+          : (paymentMethod == 'Cash' ? 'SALE_CASH' : 'SALE_ONLINE');
+
+      final description = paymentMethod == 'Udhaar'
+          ? 'User "$username" approved UDHAAR credit of ₹${totalAmount.toStringAsFixed(2)} on Invoice #INV-$saleId for customer "$customerName".'
+          : 'User "$username" collected $paymentMethod payment of ₹${totalAmount.toStringAsFixed(2)} on Invoice #INV-$saleId for "$customerName".';
+
+      await into(auditLogs).insert(
+        AuditLogsCompanion.insert(
+          userId: userId,
+          username: username,
+          actionType: actionType,
+          entityId: Value('INV-$saleId'),
+          details: description,
+          timestamp: Value(DateTime.now()),
+        ),
+      );
 
       return saleId;
     });
   }
 
-  // Atomic Udhaar payment receipt transaction
+  // Atomic Udhaar payment receipt transaction with audit footprint
   Future<int> recordPaymentTransaction({
     required int customerId,
     required double amountPaid,
     required String paymentMethod,
+    required int userId,
+    required String username,
     String? notes,
   }) {
     return transaction(() async {
@@ -355,24 +464,51 @@ class AppDatabase extends _$AppDatabase {
         CustomersCompanion(totalDue: Value(newDue)),
       );
 
+      // Audit Log
+      await into(auditLogs).insert(
+        AuditLogsCompanion.insert(
+          userId: userId,
+          username: username,
+          actionType: 'UDHAAR_PAYMENT',
+          entityId: Value('PMT-$paymentId'),
+          details: 'User "$username" accepted Udhaar payment of ₹${amountPaid.toStringAsFixed(2)} ($paymentMethod) from "${cust.name}". Remaining due: ₹${newDue.toStringAsFixed(2)}.',
+          timestamp: Value(DateTime.now()),
+        ),
+      );
+
       return paymentId;
     });
   }
 
-  // Stock Adjustment / Restock
+  // Stock Adjustment / Restock with Audit
   Future<void> restockItem({
     required int itemId,
     required double addedQty,
     double? newPurchasePrice,
     double? newSellingPrice,
+    required int userId,
+    required String username,
   }) {
     return transaction(() async {
       final current = await (select(items)..where((t) => t.id.equals(itemId))).getSingle();
+      final newStock = current.stockQty + addedQty;
       await (update(items)..where((t) => t.id.equals(itemId))).write(
         ItemsCompanion(
-          stockQty: Value(current.stockQty + addedQty),
+          stockQty: Value(newStock),
           purchasePrice: newPurchasePrice != null ? Value(newPurchasePrice) : const Value.absent(),
           sellingPrice: newSellingPrice != null ? Value(newSellingPrice) : const Value.absent(),
+        ),
+      );
+
+      // Audit Log
+      await into(auditLogs).insert(
+        AuditLogsCompanion.insert(
+          userId: userId,
+          username: username,
+          actionType: 'ITEM_RESTOCKED',
+          entityId: Value('ITEM-$itemId'),
+          details: 'User "$username" added ${addedQty.toStringAsFixed(1)} ${current.unit} to "${current.nameEn}". Stock updated: ${current.stockQty.toStringAsFixed(1)} -> ${newStock.toStringAsFixed(1)}.',
+          timestamp: Value(DateTime.now()),
         ),
       );
     });

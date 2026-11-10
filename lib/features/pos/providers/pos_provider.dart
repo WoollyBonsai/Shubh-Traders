@@ -163,7 +163,7 @@ class PosNotifier extends Notifier<PosState> {
     state = const PosState();
   }
 
-  Future<int?> checkout({required int userId}) async {
+  Future<int?> checkout({required int userId, required String username}) async {
     if (state.cart.isEmpty) return null;
     state = state.copyWith(isProcessing: true);
 
@@ -205,6 +205,7 @@ class PosNotifier extends Notifier<PosState> {
 
       final saleId = await _db.executeSaleTransaction(
         userId: userId,
+        username: username,
         customerId: effectiveCustomerId,
         totalAmount: state.grandTotal,
         paymentMethod: state.paymentMethod,

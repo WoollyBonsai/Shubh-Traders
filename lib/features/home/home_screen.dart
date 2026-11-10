@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shubh_traders/core/localization/app_locale.dart';
 import 'package:shubh_traders/core/theme/app_theme.dart';
 import 'package:shubh_traders/core/widgets/dual_text.dart';
+import 'package:shubh_traders/features/audit/screens/audit_logs_screen.dart';
 import 'package:shubh_traders/features/auth/providers/auth_provider.dart';
 import 'package:shubh_traders/features/auth/screens/users_screen.dart';
+import 'package:shubh_traders/features/backup/screens/backup_screen.dart';
 import 'package:shubh_traders/features/dashboard/screens/dashboard_screen.dart';
 import 'package:shubh_traders/features/inventory/screens/categories_screen.dart';
 import 'package:shubh_traders/features/inventory/screens/inventory_screen.dart';
@@ -27,16 +30,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     setState(() => _selectedIndex = index);
   }
 
-  void _confirmLogout() {
+  void _confirmLogout({bool isSwitching = false}) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const DualText(
-          en: 'Sign Out',
-          hi: 'लॉगआउट करें',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: DualText(
+          en: isSwitching ? 'Switch User' : 'Sign Out',
+          hi: isSwitching ? 'उपयोगकर्ता बदलें' : 'लॉगआउट करें',
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        content: const Text('Are you sure you want to log out of Shubh Traders?'),
+        content: Text(isSwitching
+            ? 'Do you want to sign out and log in as another user?'
+            : 'Are you sure you want to log out of Shubh Traders?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           ElevatedButton(
@@ -44,8 +49,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               Navigator.pop(ctx);
               ref.read(authProvider.notifier).logout();
             },
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.dangerColor, foregroundColor: Colors.white),
-            child: const Text('Logout'),
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.dangerRed, foregroundColor: Colors.white),
+            child: Text(isSwitching ? 'Switch' : 'Logout'),
           ),
         ],
       ),
@@ -57,7 +62,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final authState = ref.watch(authProvider);
     final user = authState.currentUser;
     final isAdmin = authState.isAdmin;
+    final currentLang = ref.watch(appLocaleProvider);
 
+    // List of available pages based on role
     final List<Widget> pages = [
       DashboardScreen(onNavigateTab: _onNavigate),
       const PosScreen(),
@@ -66,58 +73,194 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       const SalesHistoryScreen(),
       const CategoriesScreen(),
       const ExportScreen(),
-      const UsersScreen(),
+      if (isAdmin) const AuditLogsScreen(),
+      if (isAdmin) const UsersScreen(),
+      if (isAdmin) const BackupScreen(),
       const SettingsScreen(),
     ];
 
     return Scaffold(
-      body: Row(
+      body: Column(
         children: [
-          // Desktop Navigation Sidebar
+          // TOP HEADER BAR: Shop Brand on left, Global Language Selector & User Profile on TOP RIGHT
           Container(
-            width: 250,
+            height: 60,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             decoration: const BoxDecoration(
-              color: Color(0xFF0F172A),
-              border: Border(right: BorderSide(color: Color(0xFF1E293B))),
+              color: Colors.white,
+              border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
             ),
-            child: Column(
+            child: Row(
               children: [
-                // App Logo & Header
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: AppTheme.secondaryColor.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(Icons.storefront_rounded, color: AppTheme.secondaryColor, size: 26),
+                // Brand Left
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(7),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryNavy.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      const SizedBox(width: 12),
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'SHUBH TRADERS',
-                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15, letterSpacing: 0.5),
-                            ),
-                            Text(
-                              'शुभ ट्रेडर्स POS',
-                              style: TextStyle(color: Colors.amber, fontSize: 11, fontWeight: FontWeight.w500),
-                            ),
-                          ],
+                      child: const Icon(Icons.storefront_rounded, color: AppTheme.primaryNavy, size: 24),
+                    ),
+                    const SizedBox(width: 10),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text(
+                          'SHUBH TRADERS',
+                          style: TextStyle(
+                            color: AppTheme.primaryNavy,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            letterSpacing: 0.5,
+                          ),
                         ),
+                        Text(
+                          'शुभ ट्रेडर्स • Hardware & Building Materials',
+                          style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const Spacer(),
+
+                // Language Quick Selector in Header
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFCBD5E1)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.translate, size: 16, color: AppTheme.primaryNavy),
+                      const SizedBox(width: 6),
+                      DropdownButton<AppLanguage>(
+                        value: currentLang,
+                        underline: const SizedBox(),
+                        isDense: true,
+                        style: const TextStyle(fontSize: 12, color: Color(0xFF0F172A), fontWeight: FontWeight.bold),
+                        items: const [
+                          DropdownMenuItem(value: AppLanguage.hindi, child: Text('हिन्दी (Hindi)')),
+                          DropdownMenuItem(value: AppLanguage.english, child: Text('English')),
+                          DropdownMenuItem(value: AppLanguage.dual, child: Text('Dual (दोनों)')),
+                        ],
+                        onChanged: (lang) {
+                          if (lang != null) ref.read(appLocaleProvider.notifier).setLanguage(lang);
+                        },
                       ),
                     ],
                   ),
                 ),
-                const Divider(color: Color(0xFF1E293B), height: 1),
+                const SizedBox(width: 16),
 
-                // Nav Items
-                Expanded(
+                // USER PROFILE ON TOP RIGHT
+                PopupMenuButton<String>(
+                  offset: const Offset(0, 48),
+                  tooltip: 'User Profile & Switch Account',
+                  onSelected: (val) {
+                    if (val == 'switch') {
+                      _confirmLogout(isSwitching: true);
+                    } else if (val == 'logout') {
+                      _confirmLogout(isSwitching: false);
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      enabled: false,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(user?.fullName ?? 'User', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
+                          Text('@${user?.username ?? ""} • ${isAdmin ? "Owner (Admin)" : "Employee"}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuDivider(),
+                    const PopupMenuItem(
+                      value: 'switch',
+                      child: Row(
+                        children: [
+                          Icon(Icons.switch_account_outlined, size: 18, color: AppTheme.primaryNavy),
+                          SizedBox(width: 10),
+                          Text('Switch User / खाता बदलें'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'logout',
+                      child: Row(
+                        children: [
+                          Icon(Icons.logout, size: 18, color: AppTheme.dangerRed),
+                          SizedBox(width: 10),
+                          Text('Sign Out / लॉगआउट', style: TextStyle(color: AppTheme.dangerRed)),
+                        ],
+                      ),
+                    ),
+                  ],
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircleAvatar(
+                          radius: 14,
+                          backgroundColor: isAdmin ? AppTheme.warningAmber : AppTheme.primaryNavy,
+                          child: Text(
+                            user != null && user.fullName.isNotEmpty ? user.fullName[0].toUpperCase() : 'U',
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              user?.fullName ?? 'User',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                            ),
+                            Text(
+                              isAdmin ? 'Owner (Admin)' : 'Staff Employee',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: isAdmin ? AppTheme.warningAmber : AppTheme.successGreen,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(Icons.arrow_drop_down, size: 18, color: Colors.grey),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // MAIN BODY: Left Navigation Rail & Content
+          Expanded(
+            child: Row(
+              children: [
+                // Desktop Navigation Sidebar
+                Container(
+                  width: 240,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF0F172A),
+                    border: Border(right: BorderSide(color: Color(0xFF1E293B))),
+                  ),
                   child: ListView(
                     padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
                     children: [
@@ -153,7 +296,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         isSelected: _selectedIndex == 3,
                         onTap: () => _onNavigate(3),
                         badgeText: 'Udhaar',
-                        badgeColor: Colors.red.shade400,
+                        badgeColor: AppTheme.dangerRed,
                       ),
                       _SidebarItem(
                         icon: Icons.receipt_long_outlined,
@@ -179,78 +322,66 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         isSelected: _selectedIndex == 6,
                         onTap: () => _onNavigate(6),
                       ),
-                      if (isAdmin)
+                      if (isAdmin) ...[
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          child: Text(
+                            'ADMIN CONSOLE',
+                            style: TextStyle(color: Color(0xFF64748B), fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1),
+                          ),
+                        ),
+                        _SidebarItem(
+                          icon: Icons.history_edu_outlined,
+                          activeIcon: Icons.history_edu,
+                          labelEn: 'Audit Trail',
+                          labelHi: 'ऑडिट लॉग्स',
+                          isSelected: _selectedIndex == 7,
+                          onTap: () => _onNavigate(7),
+                          badgeText: 'Audit',
+                          badgeColor: const Color(0xFF7C3AED),
+                        ),
                         _SidebarItem(
                           icon: Icons.manage_accounts_outlined,
                           activeIcon: Icons.manage_accounts,
                           labelEn: 'Users & Staff',
                           labelHi: 'कर्मचारी प्रबंधन',
-                          isSelected: _selectedIndex == 7,
-                          onTap: () => _onNavigate(7),
+                          isSelected: _selectedIndex == 8,
+                          onTap: () => _onNavigate(8),
                         ),
+                        _SidebarItem(
+                          icon: Icons.backup_outlined,
+                          activeIcon: Icons.backup,
+                          labelEn: 'Database Backups',
+                          labelHi: 'डेटाबेस बैकअप',
+                          isSelected: _selectedIndex == 9,
+                          onTap: () => _onNavigate(9),
+                        ),
+                      ],
+                      const Divider(color: Color(0xFF1E293B)),
                       _SidebarItem(
                         icon: Icons.settings_outlined,
                         activeIcon: Icons.settings,
                         labelEn: 'Settings',
                         labelHi: 'सेटिंग्स',
-                        isSelected: _selectedIndex == 8,
-                        onTap: () => _onNavigate(8),
+                        isSelected: _selectedIndex == (isAdmin ? 10 : 7),
+                        onTap: () => _onNavigate(isAdmin ? 10 : 7),
                       ),
                     ],
                   ),
                 ),
 
-                // Bottom User Profile & Sign Out
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF090D16),
-                    border: Border(top: BorderSide(color: Color(0xFF1E293B))),
-                  ),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 18,
-                        backgroundColor: isAdmin ? Colors.amber.shade700 : AppTheme.primaryColor,
-                        child: Text(
-                          user != null && user.fullName.isNotEmpty ? user.fullName[0].toUpperCase() : 'U',
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              user?.fullName ?? 'User',
-                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            Text(
-                              '${user?.role ?? ""} (${user?.username ?? ""})',
-                              style: TextStyle(color: Colors.grey.shade400, fontSize: 11),
-                            ),
-                          ],
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.logout_rounded, color: Colors.redAccent, size: 20),
-                        tooltip: 'Sign Out / लॉगआउट',
-                        onPressed: _confirmLogout,
-                      ),
-                    ],
+                // Main Page Content with Responsive Box Constraints
+                Expanded(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      return IndexedStack(
+                        index: _selectedIndex.clamp(0, pages.length - 1),
+                        children: pages,
+                      );
+                    },
                   ),
                 ),
               ],
-            ),
-          ),
-
-          // Main Page Content
-          Expanded(
-            child: IndexedStack(
-              index: _selectedIndex,
-              children: pages,
             ),
           ),
         ],
@@ -259,7 +390,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 }
 
-class _SidebarItem extends StatelessWidget {
+class _SidebarItem extends ConsumerWidget {
   final IconData icon;
   final IconData activeIcon;
   final String labelEn;
@@ -281,11 +412,24 @@ class _SidebarItem extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(appLocaleProvider);
+
+    String primaryText;
+    String? subText;
+    if (lang == AppLanguage.english) {
+      primaryText = labelEn;
+    } else if (lang == AppLanguage.hindi) {
+      primaryText = labelHi;
+    } else {
+      primaryText = labelEn;
+      subText = labelHi;
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2.0),
       child: Material(
-        color: isSelected ? const Color(0xFF1E3A8A) : Colors.transparent,
+        color: isSelected ? AppTheme.primaryNavy : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
         child: InkWell(
           onTap: onTap,
@@ -307,20 +451,21 @@ class _SidebarItem extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        labelEn,
+                        primaryText,
                         style: TextStyle(
                           color: isSelected ? Colors.white : const Color(0xFFE2E8F0),
                           fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                           fontSize: 13,
                         ),
                       ),
-                      Text(
-                        labelHi,
-                        style: TextStyle(
-                          color: isSelected ? Colors.white.withValues(alpha: 0.8) : const Color(0xFF64748B),
-                          fontSize: 10,
+                      if (subText != null)
+                        Text(
+                          subText,
+                          style: TextStyle(
+                            color: isSelected ? Colors.white.withValues(alpha: 0.8) : const Color(0xFF64748B),
+                            fontSize: 10,
+                          ),
                         ),
-                      ),
                     ],
                   ),
                 ),

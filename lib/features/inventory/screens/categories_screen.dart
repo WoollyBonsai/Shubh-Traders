@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shubh_traders/core/database/database.dart';
 import 'package:shubh_traders/core/theme/app_theme.dart';
 import 'package:shubh_traders/core/widgets/dual_text.dart';
+import 'package:shubh_traders/features/auth/providers/auth_provider.dart';
 import 'package:shubh_traders/features/inventory/providers/inventory_provider.dart';
 
 class CategoriesScreen extends ConsumerWidget {
@@ -58,8 +59,15 @@ class CategoriesScreen extends ConsumerWidget {
             onPressed: () async {
               if (!formKey.currentState!.validate()) return;
               final inv = ref.read(inventoryNotifierProvider);
+              final auth = ref.read(authProvider);
+              final user = auth.currentUser;
               if (existing == null) {
-                await inv.addCategory(enCtrl.text, hiCtrl.text);
+                await inv.addCategory(
+                  enCtrl.text,
+                  hiCtrl.text,
+                  userId: user?.id ?? 1,
+                  username: user?.username ?? 'Staff',
+                );
               } else {
                 await inv.updateCategory(existing.id, enCtrl.text, hiCtrl.text);
               }

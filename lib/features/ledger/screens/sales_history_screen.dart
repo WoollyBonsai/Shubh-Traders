@@ -359,8 +359,8 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
 
                         Expanded(
                           child: SingleChildScrollView(
-                            child: SizedBox(
-                              width: double.infinity,
+                            child: SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
                               child: DataTable(
                                 columns: const [
                                   DataColumn(label: Text('Invoice #', style: TextStyle(fontWeight: FontWeight.bold))),

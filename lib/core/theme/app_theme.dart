@@ -36,6 +36,7 @@ class AppTheme {
       ),
       scaffoldBackgroundColor: backgroundLight,
       fontFamily: 'Segoe UI',
+      fontFamilyFallback: const ['NotoSansDevanagari', 'Roboto', 'Arial'],
     );
 
     return _applyFontScaling(base, fontMultiplier);

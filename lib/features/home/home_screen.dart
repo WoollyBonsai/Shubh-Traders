@@ -144,7 +144,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         value: currentLang,
                         underline: const SizedBox(),
                         isDense: true,
-                        style: const TextStyle(fontSize: 12, color: Color(0xFF0F172A), fontWeight: FontWeight.bold),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontSize: 12,
+                          color: const Color(0xFF0F172A),
+                          fontWeight: FontWeight.bold,
+                        ),
                         items: const [
                           DropdownMenuItem(value: AppLanguage.hindi, child: Text('हिन्दी (Hindi)')),
                           DropdownMenuItem(value: AppLanguage.english, child: Text('English')),

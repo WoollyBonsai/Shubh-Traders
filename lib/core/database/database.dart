@@ -345,6 +345,7 @@ class AppDatabase extends _$AppDatabase {
     required String actionType,
     String? entityId,
     required String details,
+    DateTime? customTimestamp,
   }) {
     return into(auditLogs).insert(
       AuditLogsCompanion.insert(
@@ -353,7 +354,7 @@ class AppDatabase extends _$AppDatabase {
         actionType: actionType,
         entityId: Value(entityId),
         details: details,
-        timestamp: Value(DateTime.now()),
+        timestamp: Value(customTimestamp ?? DateTime.now()),
       ),
     );
   }
@@ -367,6 +368,7 @@ class AppDatabase extends _$AppDatabase {
     required String paymentMethod,
     required List<CartItemPayload> cartItems,
     String? notes,
+    DateTime? customTimestamp,
   }) {
     return transaction(() async {
       // 1. Insert into Sales
@@ -377,7 +379,7 @@ class AppDatabase extends _$AppDatabase {
           totalAmount: totalAmount,
           paymentMethod: paymentMethod,
           notes: Value(notes),
-          timestamp: Value(DateTime.now()),
+          timestamp: Value(customTimestamp ?? DateTime.now()),
         ),
       );
 
@@ -429,7 +431,7 @@ class AppDatabase extends _$AppDatabase {
           actionType: actionType,
           entityId: Value('INV-$saleId'),
           details: description,
-          timestamp: Value(DateTime.now()),
+          timestamp: Value(customTimestamp ?? DateTime.now()),
         ),
       );
 
@@ -445,6 +447,7 @@ class AppDatabase extends _$AppDatabase {
     required int userId,
     required String username,
     String? notes,
+    DateTime? customTimestamp,
   }) {
     return transaction(() async {
       final paymentId = await into(payments).insert(
@@ -453,7 +456,7 @@ class AppDatabase extends _$AppDatabase {
           amountPaid: amountPaid,
           paymentMethod: paymentMethod,
           notes: Value(notes),
-          timestamp: Value(DateTime.now()),
+          timestamp: Value(customTimestamp ?? DateTime.now()),
         ),
       );
 
@@ -472,7 +475,7 @@ class AppDatabase extends _$AppDatabase {
           actionType: 'UDHAAR_PAYMENT',
           entityId: Value('PMT-$paymentId'),
           details: 'User "$username" accepted Udhaar payment of ₹${amountPaid.toStringAsFixed(2)} ($paymentMethod) from "${cust.name}". Remaining due: ₹${newDue.toStringAsFixed(2)}.',
-          timestamp: Value(DateTime.now()),
+          timestamp: Value(customTimestamp ?? DateTime.now()),
         ),
       );
 
@@ -488,6 +491,7 @@ class AppDatabase extends _$AppDatabase {
     double? newSellingPrice,
     required int userId,
     required String username,
+    DateTime? customTimestamp,
   }) {
     return transaction(() async {
       final current = await (select(items)..where((t) => t.id.equals(itemId))).getSingle();
@@ -508,7 +512,7 @@ class AppDatabase extends _$AppDatabase {
           actionType: 'ITEM_RESTOCKED',
           entityId: Value('ITEM-$itemId'),
           details: 'User "$username" added ${addedQty.toStringAsFixed(1)} ${current.unit} to "${current.nameEn}". Stock updated: ${current.stockQty.toStringAsFixed(1)} -> ${newStock.toStringAsFixed(1)}.',
-          timestamp: Value(DateTime.now()),
+          timestamp: Value(customTimestamp ?? DateTime.now()),
         ),
       );
     });
